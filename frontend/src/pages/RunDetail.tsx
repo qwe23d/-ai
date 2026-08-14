@@ -18,6 +18,7 @@ import {
   List,
   LayoutDashboard,
   Loader2,
+  PieChart,
   ShieldCheck,
   XCircle,
   CircleSlash,
@@ -34,10 +35,11 @@ import { ValidationPanel } from "@/components/charts/ValidationPanel";
 import { Skeleton, SkeletonMetrics, SkeletonChart } from "@/components/common/Skeleton";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { getStrategyReportIdentity, StrategyResearchDashboard } from "@/components/charts/StrategyResearchDashboard";
+import { PositionsTab } from "@/components/run/PositionsTab";
 
 const rehypePlugins = [rehypeHighlight];
 
-type Tab = "dashboard" | "chart" | "trades" | "runCard" | "code" | "validation" | "studio";
+type Tab = "dashboard" | "chart" | "trades" | "positions" | "runCard" | "code" | "validation" | "studio";
 type ChartPayload = Pick<RunData, "price_series" | "indicator_series" | "trade_markers">;
 type ChartCache = Record<string, ChartPayload>;
 type ChartLoadProgress = { done: number; total: number };
@@ -121,10 +123,14 @@ export function RunDetail() {
   const hasValidation = !!run?.validation;
   const hasRunCard = !!run?.run_card;
   const hasStudio = !!run?.risk_xray || !!run?.rebalance_notes;
+  const hasPositions = !!run?.artifacts_positions_csv?.some(
+    (row) => Object.keys(row).some((key) => key.toLowerCase() !== "timestamp" && key.toLowerCase() !== "date"),
+  );
   const TABS: { id: Tab; label: string; icon: typeof BarChart3; hidden?: boolean }[] = [
     { id: "dashboard", label: i18n.t("runDetail.dashboard"), icon: LayoutDashboard },
     { id: "chart", label: i18n.t("runDetail.chart"), icon: BarChart3 },
     { id: "trades", label: i18n.t("runDetail.trades"), icon: List },
+    { id: "positions", label: i18n.t("runDetail.positions.tab"), icon: PieChart, hidden: !hasPositions },
     { id: "studio", label: i18n.t("runDetail.studio"), icon: Gauge, hidden: !hasStudio },
     { id: "validation", label: i18n.t("runDetail.validation"), icon: ShieldCheck, hidden: !hasValidation },
     { id: "runCard", label: i18n.t("runDetail.runCard"), icon: FileCheck2, hidden: !hasRunCard },
@@ -394,6 +400,7 @@ export function RunDetail() {
             />
           )}
           {tab === "trades" && <TradesTab run={run} />}
+          {tab === "positions" && hasPositions && <PositionsTab run={run} />}
           {tab === "validation" && run.validation && <ValidationPanel data={run.validation} />}
           {tab === "studio" && hasStudio && (
             <StudioTab xray={run.risk_xray} notes={run.rebalance_notes} />
